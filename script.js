@@ -2,21 +2,24 @@ const container = document.getElementById("templateGrid");
 const searchInput = document.getElementById("searchInput");
 
 /**
- * The CORE LOGIC: Fetches from PHP first (for local dev), falls back to JSON (for GitHub).
+ * The CORE LOGIC: Fetches from PHP first (Dynamic/Local), falls back to JSON (Static/GitHub).
+ * * - When run on XAMPP, 'fetch_templates.php' will succeed.
+ * - When run on GitHub Pages (without the PHP file), the fetch will 404, 
+ * and the script will fall back to 'templete.json'.
  */
 async function fetchTemplates() {
     let templatesData = [];
-    const jsonFileName = 'templete.json'; // The name of your static JSON file
+    const phpFileName = 'fetch_templates.php'; 
+    const jsonFileName = 'templete.json'; 
 
     // 1. TRY DYNAMIC PHP FILE FIRST (For XAMPP/Local Server)
     try {
-        const phpResponse = await fetch('fetch_templates.php'); 
+        const phpResponse = await fetch(phpFileName); 
         
         if (phpResponse.ok) {
             templatesData = await phpResponse.json(); 
-            // If PHP succeeds and returns valid JSON, we use it.
             
-            // Check if PHP returned a database error (your PHP file returns JSON even on error)
+            // Handle internal database error message returned by PHP
             if (templatesData && templatesData.error) {
                  throw new Error(templatesData.error);
             }
@@ -29,13 +32,8 @@ async function fetchTemplates() {
         }
 
     } catch (e) {
-        // This 'catch' block runs if:
-        // 1. PHP file is not found (GitHub Pages 404).
-        // 2. PHP file runs but returns an HTTP error.
-        // 3. PHP file returns the custom database error.
-        console.warn("Dynamic PHP fetch failed. Falling back to static JSON.", e);
-
         // --- 2. FALLBACK TO STATIC JSON FILE (For GitHub Pages) ---
+        console.warn(`Dynamic fetch failed (File not found on server or error: ${e.message}). Falling back to static JSON.`);
         try {
             const jsonResponse = await fetch(jsonFileName); 
             
@@ -49,7 +47,7 @@ async function fetchTemplates() {
             // If both fail, display a final error message
             console.error("Critical Fetch Error: Failed to load from both sources.", jsonError);
             container.innerHTML = `<p style="text-align: center; color: red; width: 100%; padding: 50px;">
-                Error loading templates from both dynamic and static sources. Check your **${jsonFileName}** file.
+                ERROR: Failed to load templates. Check if **${jsonFileName}** is correctly pushed to GitHub.
             </p>`;
             return; // Stop execution
         }
