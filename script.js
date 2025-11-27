@@ -1,40 +1,37 @@
-// Use this entire function in script.js:
+const container = document.getElementById("templateGrid");
+const searchInput = document.getElementById("searchInput");
+
+/**
+ * Simplified logic for GitHub Pages: ONLY fetch static JSON.
+ */
 async function fetchTemplates() {
     let templatesData = [];
 
-    // 1. TRY DYNAMIC PHP FILE FIRST (For XAMPP/Local Server)
+    // 1. Fetch from the static JSON file
     try {
-        const phpResponse = await fetch('fetch_templates.php'); 
-
-        if (phpResponse.ok) {
-            templatesData = await phpResponse.json(); 
-        } else {
-            throw new Error('PHP file returned an error. Falling back to JSON.');
+        // Double-check your filename: is it 'templete.json' or 'template.json'?
+        const jsonResponse = await fetch('templete.json'); 
+        
+        if (!jsonResponse.ok) {
+            throw new Error(`Static JSON HTTP error! status: ${jsonResponse.status}`);
         }
+        templatesData = await jsonResponse.json(); 
 
-    } catch (e) {
-        console.warn("PHP fetch failed. Falling back to static JSON.", e);
-
-        // 2. FALLBACK TO STATIC JSON FILE (For GitHub Pages)
-        try {
-            const jsonResponse = await fetch('templete.json'); 
-
-            if (!jsonResponse.ok) {
-                throw new Error(`Static JSON HTTP error! status: ${jsonResponse.status}`);
-            }
-            templatesData = await jsonResponse.json(); 
-
-        } catch (jsonError) {
-            console.error("Critical Fetch Error:", jsonError);
-            // Display error message if both sources fail
-            container.innerHTML = `<p style="text-align: center; color: red; width: 100%;">
-                Error loading templates from both dynamic and static sources. Check your files.
-            </p>`;
-            return; 
-        }
+    } catch (jsonError) {
+        // Display a final error message if the JSON file fails
+        console.error("Critical Fetch Error:", jsonError);
+        container.innerHTML = `<p style="text-align: center; color: red; width: 100%;">
+            Error loading templates. Check that **templete.json** is in the same folder.
+        </p>`;
+        return; 
     }
 
-    // 3. RENDER DATA (from whichever source succeeded)
+    // 2. RENDER DATA
     renderTemplates(templatesData);
-    setupSearch();
+    setupSearch(templatesData); // Pass the data to search setup for better optimization
 }
+
+// ... rest of the functions (renderTemplates, copyLink, setupSearch) ...
+// The rest of your script.js code is fine.
+
+fetchTemplates();
